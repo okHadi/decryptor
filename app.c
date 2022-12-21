@@ -5,7 +5,7 @@
 #include <ctype.h>
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
-
+//gcc -o hello_mongoc app.c -I/usr/local/include/libbson-1.0-/usr/local/include/libmongoc-1.0 -lmongoc-1.0 -lbson-1.0 -lcurl
 struct memory{                  //struct to store the data from curl
     char *memory;
     size_t size;
@@ -79,50 +79,48 @@ int main(){
                 finalPrice[j] = priceStr[i];
                 }
             }
-            puts(finalPrice);
+            double finPrice = atof(finalPrice);
+            //printf("%lf", finPrice);
         }
         curl_easy_cleanup(curl);    
     }
     curl_global_cleanup();
 
     /**************************************PREDICTION EXTRACTION****************************************************/
-    FILE    *textfile;
-    char    line[MAX_LINE_LENGTH];
-    char *p;
-    char* avg23;
-    char* avg24;
-    char* avg25;
-    char* price23;
-    char* price24;
-    char* price25;
-    float pavg23;
-    float pavg24;
-    float pavg25;
-    textfile = fopen("predictions.txt", "r");
-    if(textfile == NULL)
-        puts("\n Could not find the predictions data.");
-    
-    while(fgets(line, MAX_LINE_LENGTH, textfile))
+
+
+    static const char filename[] = "predictions.txt";
+    FILE *file = fopen(filename, "r");
+    int count = 0;
+    int check = 0;
+    float year23[102], year24[102];
+    float num;
+    int i= 0; 
+    if ( file != NULL )
     {
-        if(strstr(line, symbol))
+        char line[1000]; /* or other suitable maximum line size */
+        while (fgets(line, sizeof line, file) != NULL) /* read a line */
         {
-            int j=0;
-            p = strchr(line, '{');
-            for(int i = 0; i<strlen(line), i++;)
-            {
-                if( (isdigit(line[i]) || ispunct(line[i])) && line[i] != ','){
-                    price23[j] = line[i];
-                    j++;
-                }
+            if (strstr(line, symbol)){
+                check = 1;
+                continue;
             }
-            puts(price23);
+            
+            else if (check==1 && !(isalpha(line[1]))){
+                puts(line);
+            }
+            else{
+                break;
+            }
+            
+
+            
+
         }
+        fclose(file);
     }
-    fclose(textfile);
-
-
-
-
-    return 0;
+    else{
+        puts("error");
+    }
 }
 
