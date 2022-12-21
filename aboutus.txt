@@ -1,0 +1,21 @@
+Decryptor (patent and trademark pending) is a free program
+made for users so that they can invest into crypto more wisely.
+
+The purpose is to save the people from "crypto gurus", and to create
+more trust and trasperency between the common man and the big guns
+of the industry so that more people invest in crypto without
+being scammed.
+
+
+Created by:
+Hadi Khan
+www.github.com/okHadi
+
+Created for:
+End of Semester Project
+1st Semester
+BS Computer Science
+NUST
+
+Instructor:
+Sir Jaudat Mamun
