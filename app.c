@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
 
@@ -31,30 +32,54 @@ static size_t write_callback(char *contents, size_t size, size_t nmemb, void *us
 int main(){
 
     /****************************INPUT FROM USER**********************************/
-    
+    char opt;
     char symbol[10];
     char* result;
-    int priceInvested;
-    puts("********************************************");
-    puts("*                                          *");
-    puts("*                                          *");
-    puts("*         Welcome to the DeCryptor         *");
-    puts("*                                          *");
-    puts("*   Decrypt the world of crypto with us    *");
-    puts("*                                          *");
-    puts("*                                          *");
-    puts("********************************************");
-
+    float priceInvested;
+    sleep(2);
+    puts("***********************************************************");
+    puts("*                                                         *");
+    puts("*                                                         *");
+    puts("*              Welcome to the DeCryptor                   *");
+    puts("*                                                         *");
+    puts("*          Decrypt the world of crypto with us            *");
+    puts("*                                                         *");
+    puts("*                                                         *");
+    puts("***********************************************************");
+    puts(" ");
+    sleep(2);
+    start:
     puts("Select an option to work with: ");
+    puts(" ");
+    sleep(2);
     puts("1- Get prediction calculation");
     puts("2- About us ");
-    puts("(Press 1 or 2");
-    
-    printf("Please enter the symbol of the coin on which you want predictions: ");
+    puts("3- Exit the program");
+    puts(" ");
+    puts("(Press 1 or 2)");
+    opt = getchar();
+    if (opt == '1'){
+    system("clear");
+    sleep(2);
+    put("Welcome to the crypto predictor!");
+    sleep(2);
+    puts(" ");
+    puts("To use, first insert the symbo of the coin");
+    puts("that you want to get prediction about.");
+    puts(" ");
+    sleep(1);
+    puts("After that, insert the amount you want to invest.");
+    puts(" ");
+    sleep(2);
+    puts("We will show you the ROI according to our predictors.");
+    puts(" ");
+    puts(" ");
+    symbol:
+    printf("Enter the symbol of the coin: ");
     fgets(symbol, 10, stdin);      //gets the symbol
     symbol[strcspn(symbol, "\n")] = 0;      //removes the escape sequence
     puts("Enter the pricec you want to invest: ");
-    scanf("%d", &priceInvested);
+    scanf("%f", &priceInvested);
 
     /****************************REQUEST SENT TO CRYPTO SERVER******************************************************/
     CURL *curl;
@@ -62,7 +87,7 @@ int main(){
     curl_global_init(CURL_GLOBAL_ALL);
     char url[] = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=";
     strcat(url,symbol);
-
+    double finPrice;
     struct memory chnk;
     chnk.memory = NULL;
     chnk.size = 0;              //initializes the memory
@@ -98,10 +123,12 @@ int main(){
             finalPrice[j] = priceStr[i];
             }
         }
-        double finPrice = atof(finalPrice);
+        finPrice = atof(finalPrice);
         //printf("%lf", finPrice);
  
-    
+        curl_easy_cleanup(curl);   
+    }
+    curl_global_cleanup();
 
     /**************************************PREDICTION EXTRACTION****************************************************/
 
@@ -174,20 +201,58 @@ int main(){
     float avg23 = 0;
     float avg24 = 0;
     float avg25 = 0;
-    for (int j=0; j< sizeof(price23)/sizeof(price23[0]) ; j++){
+    int size23 = sizeof(price23)/sizeof(price23[0]);
+    int size24 = sizeof(price24)/sizeof(price24[0]);
+    int size25 = sizeof(price25)/sizeof(price25[0]);
+    for (int j=0; j< size23 ; j++){
         avg23 += price23[j];
     }
-    for (int j=0; j< sizeof(price24)/sizeof(price24[0]) ; j++){
+    for (int j=0; j< size24 ; j++){
         avg24 += price24[j];
     }
-    for (int j=0; j< sizeof(price25)/sizeof(price25[0]) ; j++){
+    for (int j=0; j< size25 ; j++){
         avg25 += price25[j];
     }
+    avg23 = avg23/size23;
+    avg24 = avg24/size24;
+    avg25 = avg25/size25;
+    //printf("%f %f %f", finPrice, priceInvested, avg23);
+
     puts("According to the predictions, your ROI by 2023 will be:");
     float profit23 = (finPrice/priceInvested)*avg23;
     printf("%lf", profit23);
     }
-    curl_easy_cleanup(curl);   
     }
-    curl_global_cleanup();
+    else if(opt == '2'){
+        char opt2;
+        FILE* filePointer;
+        int bufferLength = 255;
+        char buffer[bufferLength]; /* not ISO 90 compatible */
+
+        filePointer = fopen("aboutus.txt", "r");
+
+        while(fgets(buffer, bufferLength, filePointer)) {
+        sleep(1);
+        printf("%s\n", buffer);
+        }
+
+        fclose(filePointer);
+
+        sleep(5);
+        puts("What would you like to do further?");
+        sleep(1);
+        puts("1- Go to the main menu");
+        puts("2- Exit the program");
+        correctOpt:
+        opt2 = getchar();
+        if (opt2=='1'){
+            goto start;
+        }
+        else if(opt2!='1' && opt2!='2'){
+            puts("Please enter a correct option (1 or 2)");
+            goto correctOpt;
+        }
+
+    }
+
 }
