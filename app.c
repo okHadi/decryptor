@@ -7,6 +7,9 @@
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
 
+
+
+
 struct memory{                  //struct to store the data from curl
     char *memory;
     size_t size;
@@ -32,10 +35,12 @@ static size_t write_callback(char *contents, size_t size, size_t nmemb, void *us
 int main(){
 
     /****************************INPUT FROM USER**********************************/
-    char opt;
+    int opt;
     char symbol[10];
     char* result;
     float priceInvested;
+
+    menu:
     sleep(2);
     puts("***********************************************************");
     puts("*                                                         *");
@@ -48,7 +53,7 @@ int main(){
     puts("***********************************************************");
     puts(" ");
     sleep(2);
-    start:
+
     puts("Select an option to work with: ");
     puts(" ");
     sleep(2);
@@ -56,12 +61,16 @@ int main(){
     puts("2- About us ");
     puts("3- Exit the program");
     puts(" ");
-    puts("(Press 1 or 2)");
-    opt = getchar();
-    if (opt == '1'){
+    puts("(Enter 1, 2 or 3.)");
+
+    start:
+    scanf("%d", &opt);
+
+
+    if (opt == 1){
     system("clear");
     sleep(2);
-    put("Welcome to the crypto predictor!");
+    puts("Welcome to the crypto predictor!");
     sleep(2);
     puts(" ");
     puts("To use, first insert the symbo of the coin");
@@ -76,9 +85,37 @@ int main(){
     puts(" ");
     symbol:
     printf("Enter the symbol of the coin: ");
-    fgets(symbol, 10, stdin);      //gets the symbol
-    symbol[strcspn(symbol, "\n")] = 0;      //removes the escape sequence
-    puts("Enter the pricec you want to invest: ");
+
+
+    scanf("%s", symbol);     //gets the symbol
+    int symbolCheck = 0;
+    FILE* fpointer;
+    int buffLength = 255;
+    char buff[buffLength]; /* not ISO 90 compatible */
+    fpointer = fopen("predictions.txt", "r");
+    while(fgets(buff, buffLength, fpointer)) {
+            if (strstr(buff, symbol)){
+                symbolCheck = 1;
+            }
+        }
+    fclose(fpointer);
+    if (symbolCheck == 0){
+        sleep(1);
+        puts("\nUnfortunately, we could not find the crypto you have mentioned");
+        puts("in our database.");
+        sleep(1);
+        puts(" ");
+        puts("Try entering another crypto.");
+        sleep(2);
+        goto symbol;
+    }
+
+
+    puts(" ");
+    sleep(1);
+
+
+    puts("Enter the price you want to invest: ");
     scanf("%f", &priceInvested);
 
     /****************************REQUEST SENT TO CRYPTO SERVER******************************************************/
@@ -116,11 +153,11 @@ int main(){
         priceStr = strstr(chnk.memory, "price");
         int index = priceStr-chnk.memory;
         char finalPrice[20];
-        for (int i=7,j=0; i<16; i++, j++)
+        for (int z=7,j=0; z<16; z++, j++)
         {
-            if(isdigit(priceStr[i]) || ispunct(priceStr[i]))
+            if(isdigit(priceStr[z]) || ispunct(priceStr[z]))
             {
-            finalPrice[j] = priceStr[i];
+            finalPrice[j] = priceStr[z];
             }
         }
         finPrice = atof(finalPrice);
@@ -138,14 +175,76 @@ int main(){
     int linecount = 0;
     int count = 0;
     int check = 0;
-    double price23[500], price24[500], price25[500];
+    
     double num;
     char *token;
-    int i= 0; 
+    int i= 0;
+    int arrlen23 = 0;
+    int arrlen24 = 0;
+    int arrlen25 = 0;
+
+
+    if ( file != NULL )
+    {
+        char line1[1000]; /* or other suitable maximum line size */
+        while (fgets(line1, sizeof line1, file) != NULL) /* read a line */
+        {
+            if (strstr(line1, symbol)){
+                check = 1;
+                continue;
+            }          
+            else if (check==1 && !(isalpha(line1[1]))){
+                if (count==0){
+                    token=strtok(line1, " ");    
+                    while (token!= NULL){
+                        token=strtok(NULL," ");
+                        arrlen23++;
+
+                    }
+                    count++;
+                    continue;
+                }
+                else if (count==1){
+                    token=strtok(line1, " ");
+                    while (token!= NULL){
+                        token=strtok(NULL," ");
+                        arrlen24++;
+                    }
+                    count++;
+                    continue;
+                }
+                else if (count==2){
+                    token=strtok(line1, " ");
+                    while (token!= NULL){
+                        token=strtok(NULL," ");
+                        arrlen25++;
+                    }
+                    count++;
+                    continue;
+                }
+            }
+            else if(check==1 && isalpha(line1[1])){
+                break;
+            }
+            else{
+                continue;
+            }
+        }
+        fclose(file);
+    }
+    else{
+        puts("Error: Could not find the predictions data.");
+    }
+
+
+    //printf("%d", arrlen23);
+
+    FILE *file1 = fopen(filename, "r");
+    double price23[arrlen23], price24[arrlen24], price25[arrlen25];
     if ( file != NULL )
     {
         char line[1000]; /* or other suitable maximum line size */
-        while (fgets(line, sizeof line, file) != NULL) /* read a line */
+        while (fgets(line, sizeof line, file1) != NULL) /* read a line */
         {
             if (strstr(line, symbol)){
                 check = 1;
@@ -155,6 +254,7 @@ int main(){
                 if (count==0){
                     token=strtok(line, " ");    
                     while (token!= NULL){
+                        
                         price23[i] = atof(token);
                         token=strtok(NULL," ");
                         i++;
@@ -166,6 +266,7 @@ int main(){
                 else if (count==1){
                     token=strtok(line, " ");
                     while (token!= NULL){
+                        printf("%d", i);
                         price24[i] = atof(token);
                         token=strtok(NULL," ");
                         i++;
@@ -192,7 +293,7 @@ int main(){
                 continue;;
             }
         }
-        fclose(file);
+        fclose(file1);
     }
     else{
         puts("Error: Could not find the predictions data.");
@@ -201,30 +302,33 @@ int main(){
     float avg23 = 0;
     float avg24 = 0;
     float avg25 = 0;
-    int size23 = sizeof(price23)/sizeof(price23[0]);
-    int size24 = sizeof(price24)/sizeof(price24[0]);
-    int size25 = sizeof(price25)/sizeof(price25[0]);
-    for (int j=0; j< size23 ; j++){
+
+    for (int j=0; j< arrlen23 ; j++){
+        //printf("\n%d", j);
+        //printf("%f", price23[j]);
         avg23 += price23[j];
     }
-    for (int j=0; j< size24 ; j++){
+    for (int j=0; j< arrlen24 ; j++){
         avg24 += price24[j];
     }
-    for (int j=0; j< size25 ; j++){
+    for (int j=0; j< arrlen25 ; j++){
         avg25 += price25[j];
     }
-    avg23 = avg23/size23;
-    avg24 = avg24/size24;
-    avg25 = avg25/size25;
-    //printf("%f %f %f", finPrice, priceInvested, avg23);
+    //printf("%f \n", avg23);
+    //printf("%d", size23);
+    avg23 = avg23/arrlen23;
+    avg24 = avg24/arrlen24;
+    avg25 = avg25/arrlen25;
+    //sleep(1);
 
     puts("According to the predictions, your ROI by 2023 will be:");
-    float profit23 = (finPrice/priceInvested)*avg23;
+    float profit23 = (priceInvested/finPrice)*avg23;
     printf("%lf", profit23);
     }
     }
-    else if(opt == '2'){
-        char opt2;
+    else if(opt == 2){
+        system("clear");
+        int opt2;
         FILE* filePointer;
         int bufferLength = 255;
         char buffer[bufferLength]; /* not ISO 90 compatible */
@@ -244,15 +348,27 @@ int main(){
         puts("1- Go to the main menu");
         puts("2- Exit the program");
         correctOpt:
-        opt2 = getchar();
-        if (opt2=='1'){
-            goto start;
+        puts("(Enter 1 or 2)");
+        scanf("%d", &opt2);
+        if (opt2==1){
+            goto menu;
         }
-        else if(opt2!='1' && opt2!='2'){
+        else if(opt2 == 2){
+            return 0;
+        }
+        else{
             puts("Please enter a correct option (1 or 2)");
             goto correctOpt;
         }
 
     }
+    else if (opt == 3){
+        return 0;
+    }
+    else{
+        puts("Please enter a correct option.");
+        goto start;
+    }
+
 
 }
