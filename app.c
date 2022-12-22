@@ -139,8 +139,6 @@ int main(){
     struct memory chnk;
     chnk.memory = NULL;
     chnk.size = 0;              //initializes the memory
-    //char* key = getenv("KEY");          //gets the key from the .env file
-    //puts(key);
 
 
     curl = curl_easy_init();
