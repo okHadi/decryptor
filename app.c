@@ -11,10 +11,14 @@
 
 void adminPanelMenu();
 void adminPanel();
+void adminPanelOptions();
 void mainMenu();
 void mainMenuOptions();
 void cryptoPredictor();
 void wrongSymbolError();
+void predictionResult(float, float);
+void predictionsLoader();
+void aboutusMenu();
 
 struct memory{                  //struct to store the data from curl
     char *memory;
@@ -41,6 +45,24 @@ static size_t write_callback(char *contents, size_t size, size_t nmemb, void *us
 
 
 int main(){
+    /***********************Start database connection******************************/
+    // Declare a pointer to the database connection
+    sqlite3 *db;
+
+    // Declare a pointer to the error message
+    char *err_msg = 0;
+
+    // Open the database connection
+    int rc = sqlite3_open("cryptos.db", &db);
+
+    // Check if the connection was successful
+    if (rc != SQLITE_OK) {
+        // Print an error message and close the connection
+        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+
+        return 1;
+    }
 
     /****************************INPUT FROM USER**********************************/
     menu:
@@ -50,13 +72,7 @@ int main(){
     char symbol[10];
     char* result;
     float priceInvested;
- 
-
-
-
    scanf("%d", &opt);
-
-
 
     if (opt == 1){              //user chooses to get the prediction calculator
     cryptoPredictor();
@@ -295,45 +311,15 @@ int main(){
     avg23 = avg23/arrlen23;
     avg24 = avg24/arrlen24;
     avg25 = avg25/arrlen25;
-    system("clear");
-    puts("Loading...");
-    sleep(2);
-    system("clear");
-    puts("According to the predictions, your ROI will be as follows:");
+    predictionsLoader();
     float profit23 = (priceInvested/finPrice)*avg23;
     float profit24 = (priceInvested/finPrice)*avg24;
     float profit25 = (priceInvested/finPrice)*avg25;
     char *status;
     puts(" ");
-
-    if (profit23>priceInvested){
-        printf("By 2023: %.2f increased to %.2f USD \n", priceInvested, profit23);
-        printf("Percetage increase: %.2f\n", ((profit23-priceInvested)/priceInvested)*100);
-    }
-    else{
-        printf("By 2023: %.2f decreased to %.2f USD \n", priceInvested, profit23);
-        printf("Percetage decrease: %.2f\n", ((profit23-priceInvested)/priceInvested)*100);
-    }
-    puts(" ");
-    sleep(2);
-    if (profit24>priceInvested){
-        printf("By 2024: %.2f increased to %.2f USD \n", priceInvested, profit24);
-        printf("Percetage increase: %.2f\n", ((profit24-priceInvested)/priceInvested)*100);
-    }
-    else{
-        printf("By 2024: %.2f decreased to %.2f USD \n", priceInvested, profit24);
-        printf("Percetage decrease: %.2f\n", ((profit24-priceInvested)/priceInvested)*100);
-    }
-    puts(" ");
-    sleep(2);
-    if (profit25>priceInvested){
-        printf("By 2024: %.2f increased to %.2f USD \n", priceInvested, profit25);
-        printf("Percetage increase: %.2f\n", ((profit25-priceInvested)/priceInvested)*100);
-    }
-    else{
-        printf("By 2024: %.2f decreased to %.2f USD \n", priceInvested, profit25);
-        printf("Percetage decrease: %.2f\n", ((profit25-priceInvested)/priceInvested)*100);
-    }
+    predictionResult(priceInvested, profit23);
+    predictionResult(priceInvested, profit24);
+    predictionResult(priceInvested, profit25);
     }
     }
 
@@ -354,13 +340,7 @@ int main(){
 
         fclose(filePointer);
 
-        sleep(2);
-        puts("What would you like to do further?");
-        sleep(1);
-        puts("1- Go to the main menu");
-        puts("2- Exit the program");
-        
-        puts("(Enter 1 or 2)");
+        aboutusMenu();
         correctOpt:
         scanf("%d", &opt2);
         if (opt2==1){           //goes from about us section to the menu
@@ -376,8 +356,95 @@ int main(){
         }
 
     }
-    else if (opt == 3){
-        return 0;                                    //user chooses to exit the program from the manu
+    else if(opt ==3){
+        adminPanelMenu();
+
+        char password[100];
+        char pass_str[] = "ecef7b1e64c70decb9786df778d470f7288c02eeb6b95c97dade5b46d768ab50";    //temppassword
+        unsigned char pass_hash[SHA256_DIGEST_LENGTH];
+        for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+            sscanf(pass_str + (i * 2), "%2hhx", &pass_hash[i]);
+        }
+        password:
+        puts("");
+        scanf("%s", password);
+        if (strcmp(password, "-1") == 0){
+            goto menu;
+            //break;
+        }
+        else{
+            unsigned char entered_hash[SHA256_DIGEST_LENGTH];       //encrypts the entered password
+            SHA256_CTX sha256;
+            SHA256_Init(&sha256);
+            SHA256_Update(&sha256, password, strlen(password));
+            SHA256_Final(entered_hash, &sha256);
+
+            if (memcmp(pass_hash, entered_hash, SHA256_DIGEST_LENGTH) == 0) {        //compares the entered password with the original password
+                sleep(0.5);
+                puts("The password is correct, logging you in...");
+                adminPanel();
+                adminPanelOptions();
+                int adminPanelOpt;
+                scanf("%d", &adminPanelOpt);
+                if (adminPanelOpt == 1){            //add crypto predictions
+                    char *sql = "INSERT INTO cryptos (id, year, prediction) VALUES (?, ?, ?);";
+                    // Declare a pointer to the prepared statement
+                    sqlite3_stmt *stmt;
+  
+                    // Prepare the statement
+                    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+
+                    // Check if the statement was prepared successfully
+                    if (rc != SQLITE_OK ) {
+                        // Print an error message and close the connection
+                        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+
+                        sqlite3_close(db);
+
+                        return 1;
+                    }
+                    puts("Enter the id of the coin (e.g BTC)");
+                    char idadd[10];
+                    scanf("%s", idadd);
+                    puts("Enter the year of the prediction between 2023 and 2025");
+                    int yearadd;
+                    scanf("%d", &yearadd);
+                    puts("Enter the prediction:");
+                    float predadd;
+                    scanf("%f", &predadd);
+                    // Bind the values to the placeholders
+                    sqlite3_bind_text(stmt, 1, idadd, -1, SQLITE_TRANSIENT);
+                    sqlite3_bind_int(stmt, 2, yearadd);
+                    sqlite3_bind_int(stmt, 3, predadd);
+                    rc = sqlite3_step(stmt);
+
+                    if (rc != SQLITE_DONE ) {
+                    fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+                    sqlite3_close(db);
+                    return 1;
+                    }
+                    sleep(1);
+                    puts("Added succesfully. What would you like to do?");
+                    puts("1- Add another prediction");
+                    puts("2- Exit to main menu");
+
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(db);
+
+                }
+
+            } 
+            else {
+                sleep(1);
+                puts("The entered password is incorrect");
+                puts("Try again.\n");
+                goto password;
+        }
+        }
+
+    }
+    else if (opt == 4){
+        return 0;                                    //user chooses to exit the program from the menu
     }
     else{                                           //incase user inputs wrong option on the menu
         puts("Please enter a correct option.\n");
@@ -389,6 +456,19 @@ int main(){
 }
 
 
+void predictionResult(float priceInvested, float profityear){
+    if (profityear>priceInvested){
+        printf("By 2023: %.2f increased to %.2f USD \n", priceInvested, profityear);
+        printf("Percetage increase: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
+    }
+    else{
+        printf("By 2023: %.2f decreased to %.2f USD \n", priceInvested, profityear);
+        printf("Percetage decrease: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
+    }
+    puts(" ");
+    sleep(2);
+}
+
 
 void adminPanelMenu(){
     system("clear");
@@ -396,15 +476,26 @@ void adminPanelMenu(){
     puts("Welcome to the admin panel.");
     sleep(1);
     puts("To get started, first enter your password: ");
+    puts("(If you want to exit, enter -1 in the password field.)");
+    puts("Password:");
 }
 
 
 void adminPanel(){
+    sleep(1);
     system("clear");
     sleep(1);
     puts("Welcome, admin");
     sleep(1);
     puts("Here you can add your crypto predictions.");
+}
+
+void adminPanelOptions(){
+    sleep(1);
+    puts("Select one of the following options:");
+    puts("1- Insert crypto data:");
+    puts("2- View crypto data:");
+    puts("3- Exit to main menu");
 }
 
 void mainMenu(){
@@ -430,10 +521,20 @@ void mainMenuOptions(){
     sleep(1.5);
     puts("1- Get prediction calculation");
     puts("2- About us ");
-    puts("3- Exit the program");
-    puts("4- Enter the admin panel");
+    puts("3- Enter the admin panel");
+    puts("4- Exit the program");
     puts(" ");
     puts("(Enter 1, 2 or 3 or 4)");
+}
+
+void aboutusMenu(){
+    sleep(2);
+    puts("What would you like to do further?");
+    sleep(1);
+    puts("1- Go to the main menu");
+    puts("2- Exit the program");
+
+    puts("(Enter 1 or 2)");
 }
 
 void cryptoPredictor(){
@@ -463,3 +564,14 @@ void wrongSymbolError(){
     puts("Try entering another crypto.\n");
     sleep(2);
 }
+
+void predictionsLoader(){
+    system("clear");
+    puts("Loading...");
+    sleep(2);
+    system("clear");
+    puts("According to the predictions, your ROI will be as follows:");
+}
+
+
+//gcc -o crypto3 app.c -lcurl -lsqlite3 -lssl -lcrypto
