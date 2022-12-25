@@ -4,11 +4,17 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <sqlite3.h>
+#include <openssl/sha.h>
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
 
-
-
+void adminPanelMenu();
+void adminPanel();
+void mainMenu();
+void mainMenuOptions();
+void cryptoPredictor();
+void wrongSymbolError();
 
 struct memory{                  //struct to store the data from curl
     char *memory;
@@ -37,32 +43,9 @@ static size_t write_callback(char *contents, size_t size, size_t nmemb, void *us
 int main(){
 
     /****************************INPUT FROM USER**********************************/
-
-
     menu:
-    system("clear");
-    sleep(1.5);
-    puts("***********************************************************");
-    puts("*                                                         *");
-    puts("*                                                         *");
-    puts("*              Welcome to the DeCryptor                   *");
-    puts("*                                                         *");
-    puts("*          Decrypt the world of crypto with us            *");
-    puts("*                                                         *");
-    puts("*                                                         *");
-    puts("***********************************************************");
-    puts(" ");
-    sleep(1.5);
-    start:
-    puts("Select an option to work with: ");
-    puts(" ");
-    sleep(1.5);
-    puts("1- Get prediction calculation");
-    puts("2- About us ");
-    puts("3- Exit the program");
-    puts(" ");
-    puts("(Enter 1, 2 or 3.)");
-
+    puts("");
+    mainMenu();
     int opt;
     char symbol[10];
     char* result;
@@ -76,21 +59,7 @@ int main(){
 
 
     if (opt == 1){              //user chooses to get the prediction calculator
-    system("clear");
-    sleep(1.5);
-    puts("Welcome to the crypto predictor!");
-    sleep(1.5);
-    puts(" ");
-    puts("To use, first insert the symbol of the coin");
-    puts("that you want to get prediction about.");
-    puts(" ");
-    sleep(1.5);
-    puts("After that, insert the amount you want to invest.");
-    puts(" ");
-    sleep(1.5);
-    puts("We will show you the ROI according to our predictors.");
-    puts(" ");
-    puts(" ");
+    cryptoPredictor();
     symbol:
     printf("Enter the symbol of the coin: ");
 
@@ -99,6 +68,7 @@ int main(){
     for (int i=0; i<strlen(symbol); i++){       //upper case the symbol
         symbol[i] = toupper(symbol[i]);
     }
+
     int symbolCheck = 0;
     FILE* fpointer;
     int buffLength = 255;
@@ -111,13 +81,7 @@ int main(){
         }
     fclose(fpointer);
     if (symbolCheck == 0){                  //if it does not exit, have the user enter another one/enter it again
-        sleep(1);
-        puts("\nUnfortunately, we could not find the crypto you have mentioned");
-        puts("in our database.");
-        sleep(1);
-        puts(" ");
-        puts("Try entering another crypto.\n");
-        sleep(2);
+        wrongSymbolError();
         goto symbol;
     }
 
@@ -156,7 +120,8 @@ int main(){
         if(response != CURLE_OK) 
         {
             fprintf(stderr, "Request to fetch crypto price failed: %s\n", curl_easy_strerror(response));
-            goto start;
+            mainMenuOptions();
+            goto menu;
         }
         else
         {
@@ -399,6 +364,7 @@ int main(){
         correctOpt:
         scanf("%d", &opt2);
         if (opt2==1){           //goes from about us section to the menu
+            mainMenu();
             goto menu;
         }
         else if(opt2 == 2){         //exits the program from the about us sectoin
@@ -415,7 +381,8 @@ int main(){
     }
     else{                                           //incase user inputs wrong option on the menu
         puts("Please enter a correct option.\n");
-        goto start;
+        mainMenuOptions();
+        goto menu;
     }
 
 
@@ -423,3 +390,76 @@ int main(){
 
 
 
+void adminPanelMenu(){
+    system("clear");
+    sleep(1);
+    puts("Welcome to the admin panel.");
+    sleep(1);
+    puts("To get started, first enter your password: ");
+}
+
+
+void adminPanel(){
+    system("clear");
+    sleep(1);
+    puts("Welcome, admin");
+    sleep(1);
+    puts("Here you can add your crypto predictions.");
+}
+
+void mainMenu(){
+    system("clear");
+    sleep(1.5);
+    puts("***********************************************************");
+    puts("*                                                         *");
+    puts("*                                                         *");
+    puts("*              Welcome to the DeCryptor                   *");
+    puts("*                                                         *");
+    puts("*          Decrypt the world of crypto with us            *");
+    puts("*                                                         *");
+    puts("*                                                         *");
+    puts("***********************************************************");
+    puts(" ");
+    sleep(1.5);
+    mainMenuOptions();
+}
+
+void mainMenuOptions(){
+    puts("Select an option to work with: ");
+    puts(" ");
+    sleep(1.5);
+    puts("1- Get prediction calculation");
+    puts("2- About us ");
+    puts("3- Exit the program");
+    puts("4- Enter the admin panel");
+    puts(" ");
+    puts("(Enter 1, 2 or 3 or 4)");
+}
+
+void cryptoPredictor(){
+    system("clear");
+    sleep(1.5);
+    puts("Welcome to the crypto predictor!");
+    sleep(1.5);
+    puts(" ");
+    puts("To use, first insert the symbol of the coin");
+    puts("that you want to get prediction about.");
+    puts(" ");
+    sleep(1.5);
+    puts("After that, insert the amount you want to invest.");
+    puts(" ");
+    sleep(1.5);
+    puts("We will show you the ROI according to our predictors.");
+    puts(" ");
+    puts(" ");
+}
+
+void wrongSymbolError(){
+    sleep(1);
+    puts("\nUnfortunately, we could not find the crypto you have mentioned");
+    puts("in our database.");
+    sleep(1);
+    puts(" ");
+    puts("Try entering another crypto.\n");
+    sleep(2);
+}
