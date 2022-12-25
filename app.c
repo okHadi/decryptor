@@ -16,9 +16,11 @@ void mainMenu();
 void mainMenuOptions();
 void cryptoPredictor();
 void wrongSymbolError();
-void predictionResult(float, float);
+void predictionResult(float, float, int);
 void predictionsLoader();
 void aboutusMenu();
+double *getPredictionPrices(char *, int , int *);
+void addCryptosToTxt(char *);
 
 struct memory{                  //struct to store the data from curl
     char *memory;
@@ -63,6 +65,9 @@ int main(){
 
         return 1;
     }
+    char *sql = "CREATE TABLE cryptos(id text NOT NULL, year integer NOT NULL, prediction float NOT NULL);";
+  
+    rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
 
     /****************************INPUT FROM USER**********************************/
     menu:
@@ -90,17 +95,20 @@ int main(){
     int buffLength = 255;
     char buff[buffLength]; 
     fpointer = fopen("predictions.txt", "r");           //opens the predictions data
+    
     while(fgets(buff, buffLength, fpointer)) {          //to see if the crypto exists 
-            if (strstr(buff, symbol)){
-                symbolCheck = 1;
-            }
+        if (strstr(buff, symbol)){
+            symbolCheck = 1;
         }
+    }
+
     fclose(fpointer);
-    if (symbolCheck == 0){                  //if it does not exit, have the user enter another one/enter it again
+
+    if (symbolCheck == 0)
+    {                  //if it does not exit, have the user enter another one/enter it again
         wrongSymbolError();
         goto symbol;
     }
-
 
     puts(" ");
     sleep(1);
@@ -158,170 +166,46 @@ int main(){
         curl_easy_cleanup(curl);                //ends the curl call and cleansup the memory
     }
     curl_global_cleanup();
+    }
+
+
 
     /**************************************PREDICTION EXTRACTION****************************************************/
 
+    int size23, size24, size25;
+    double *predictions23 = getPredictionPrices(symbol, 2023, &size23);
+    double *predictions24 = getPredictionPrices(symbol, 2024, &size24);
+    double *predictions25 = getPredictionPrices(symbol, 2025, &size25);
 
-    static const char filename[] = "predictions.txt";
-    FILE *file = fopen(filename, "r");
-    //int linecount = 0;
-    int count = 0;
-    int check = 0;
-    
-    double num;
-    char *token;
-    int i= 0;
-    int arrlen23 = 0;
-    int arrlen24 = 0;
-    int arrlen25 = 0;
-
-
-    if ( file != NULL )                                             //determines the number of predictions for each year of a crypto
-    {
-        char line1[1000]; /* or other suitable maximum line size */
-        while (fgets(line1, sizeof line1, file) != NULL) /* read a line */
-        {
-            if (strstr(line1, symbol)){
-                check = 1;
-                continue;
-            }          
-            else if (check==1 && !(isalpha(line1[1]))){
-                if (count==0){
-                    token=strtok(line1, " ");    
-                    while (token!= NULL){
-                        token=strtok(NULL," ");
-                        arrlen23++;
-
-                    }
-                    count++;
-                    continue;
-                }
-                else if (count==1){
-                    token=strtok(line1, " ");
-                    while (token!= NULL){
-                        token=strtok(NULL," ");
-                        arrlen24++;
-                    }
-                    count++;
-                    continue;
-                }
-                else if (count==2){
-                    token=strtok(line1, " ");
-                    while (token!= NULL){
-                        token=strtok(NULL," ");
-                        arrlen25++;
-                    }
-                    count++;
-                    continue;
-                }
-            }
-            else if(check==1 && isalpha(line1[1])){
-                break;
-            }
-            else{
-                continue;
-            }
-        }
-        fclose(file);
-    }
-    else{
-        puts("Error: Could not find the predictions data.");
-    }
-
-
-
-    check = 0;
-    count = 0;
-    i = 0;
-
-    FILE *file1 = fopen(filename, "r");
-    float price23[arrlen23], price24[arrlen24], price25[arrlen25];      //assign the array lenght according to the number of predictions
-    if ( file != NULL )
-    {
-        char line[1000];
-        while (fgets(line, sizeof line, file1) != NULL) 
-        {
-            if (strstr(line, symbol)){                          //appends the predictions as floating values
-                check = 1;                                      //according to their year in the above declared arrays
-                continue;
-            }          
-            else if (check==1 && !(isalpha(line[1]))){
-                if (count==0){
-
-                    token=strtok(line, " ");
-                    while (token!= NULL){
-                       
-                        price23[i] = atof(token);
-                        token=strtok(NULL," ");
-                        i++;
-                    }
-                    count++;
-                    i=0;
-                    continue;
-                }
-                else if (count==1){
-                    token=strtok(line, " ");
-                    while (token!= NULL){
-                      
-                        price24[i] = atof(token);
-                        token=strtok(NULL," ");
-                        i++;
-                    }
-                    count++;
-                    i=0;
-                    continue;
-                }
-                else if (count==2){
-                    token=strtok(line, " ");
-                    while (token!= NULL){
-                        price25[i] = atof(token);
-                        token=strtok(NULL," ");
-                        i++;
-                    }
-                    count++;
-                    continue;
-                }
-            }
-            else if(check==1 && isalpha(line[1])){
-                break;
-            }
-            else{
-                continue;;
-            }
-        }
-        fclose(file1);
-    }
-    else{
-        puts("Error: Could not find the predictions data.");
-    }
     /**********************CALCULATE THE MEAN********************************/
     float avg23 = 0;
     float avg24 = 0;
     float avg25 = 0;
 
-    for (int j=0; j< arrlen23 ; j++){
-        avg23 += price23[j];
+    for (int j=0; j< size23 ; j++){
+        avg23 += predictions23[j];
     }
-    for (int j=0; j< arrlen24 ; j++){
-        avg24 += price24[j];
+    for (int j=0; j< size24 ; j++){
+        avg24 += predictions24[j];
     }
-    for (int j=0; j< arrlen25 ; j++){
-        avg25 += price25[j];
+    for (int j=0; j< size25 ; j++){
+        avg25 += predictions25[j];
     }
-    avg23 = avg23/arrlen23;
-    avg24 = avg24/arrlen24;
-    avg25 = avg25/arrlen25;
+    avg23 = avg23/size23;
+    avg24 = avg24/size24;
+    avg25 = avg25/size25;
     predictionsLoader();
     float profit23 = (priceInvested/finPrice)*avg23;
     float profit24 = (priceInvested/finPrice)*avg24;
     float profit25 = (priceInvested/finPrice)*avg25;
     char *status;
     puts(" ");
-    predictionResult(priceInvested, profit23);
-    predictionResult(priceInvested, profit24);
-    predictionResult(priceInvested, profit25);
+    predictionResult(priceInvested, profit23, 2023);
+    predictionResult(priceInvested, profit24, 2024);
+    predictionResult(priceInvested, profit25, 2025);
+
     }
-    }
+
 
 
     else if(opt == 2){              //user chooses to read the aboutus section on menu
@@ -344,7 +228,6 @@ int main(){
         correctOpt:
         scanf("%d", &opt2);
         if (opt2==1){           //goes from about us section to the menu
-            mainMenu();
             goto menu;
         }
         else if(opt2 == 2){         //exits the program from the about us sectoin
@@ -358,7 +241,6 @@ int main(){
     }
     else if(opt ==3){
         adminPanelMenu();
-
         char password[100];
         char pass_str[] = "ecef7b1e64c70decb9786df778d470f7288c02eeb6b95c97dade5b46d768ab50";    //temppassword
         unsigned char pass_hash[SHA256_DIGEST_LENGTH];
@@ -388,6 +270,7 @@ int main(){
                 scanf("%d", &adminPanelOpt);
                 if (adminPanelOpt == 1){            //add crypto predictions
                     addprediction:
+                    puts("");
                     char *sql = "INSERT INTO cryptos (id, year, prediction) VALUES (?, ?, ?);";
                     // Declare a pointer to the prepared statement
                     sqlite3_stmt *stmt;
@@ -427,26 +310,81 @@ int main(){
                     sleep(1);
                     
                     puts("Added succesfully. What would you like to do?");
+                    addCryptosToTxt(symbol);
                     wrongoptpred:
                     puts("1- Add another prediction");
-                    puts("2- See the predictions")
+                    puts("2- See the predictions");
                     puts("3- Exit to main menu");
                     int afterpred;
                     scanf("%d", &afterpred);
+
                     if (afterpred == 1){
                         goto addprediction;
                     }
+
+
                     else if(afterpred == 2){
-                        puts("HI");
+                        char *sql = "SELECT * FROM cryptos;";
+
+                        sqlite3_stmt *stmt;
+
+                        rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+
+                        if (rc != SQLITE_OK ) {
+                        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+                        sqlite3_close(db);
+
+                        return 1;
+                        } 
+
+                        // Print the column names
+                        int num_columns = sqlite3_column_count(stmt);
+
+                        for (int i = 0; i < num_columns; i++) {
+                        printf("%s ", sqlite3_column_name(stmt, i));
+                        }
+
+                        printf("\n");
+
+                        // Print the rows
+                        while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+                            for (int i = 0; i < num_columns; i++) {
+                                switch (sqlite3_column_type(stmt, i)) {
+                                    case SQLITE_INTEGER:
+                                    printf("%d ", sqlite3_column_int(stmt, i));
+                                    break;
+                                    case SQLITE_FLOAT:
+                                    printf("%lf ", sqlite3_column_double(stmt, i));
+                                    break;
+                                    case SQLITE_TEXT:
+                                    printf("%s ", sqlite3_column_text(stmt, i));
+                                    break;
+                                    default:
+                                    printf("NULL ");
+                                }
+                            }
+
+                            printf("\n");
+                        }
+
+                        if (rc != SQLITE_DONE) {
+                        fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+                        sqlite3_close(db);
+                        }
+                        goto wrongoptpred;
+                        sqlite3_finalize(stmt);
                     }
+                    
+
+
                     else if(afterpred ==3){
                         goto menu;
                     }
+
+
                     else{
                         puts("\nPlease enter a correct option.");
                     }
-                    sqlite3_finalize(stmt);
-                    sqlite3_close(db);
 
                 }
 
@@ -461,6 +399,8 @@ int main(){
 
     }
     else if (opt == 4){
+        
+        sqlite3_close(db);
         return 0;                                    //user chooses to exit the program from the menu
     }
     else{                                           //incase user inputs wrong option on the menu
@@ -473,13 +413,31 @@ int main(){
 }
 
 
-void predictionResult(float priceInvested, float profityear){
+void addCryptosToTxt(char *symbol){
+      FILE *fp;
+  
+    // Open the file in append mode
+    fp = fopen("predictions.txt", "a");
+  
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening file\n");
+    }
+  
+    // Write the string to the file
+    fprintf(fp, symbol);
+  
+    // Close the file
+    fclose(fp);
+}
+
+
+void predictionResult(float priceInvested, float profityear, int year){
     if (profityear>priceInvested){
-        printf("By 2023: %.2f increased to %.2f USD \n", priceInvested, profityear);
+        printf("By %d: %.2f increased to %.2f USD \n", year, priceInvested, profityear);
         printf("Percetage increase: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
     }
     else{
-        printf("By 2023: %.2f decreased to %.2f USD \n", priceInvested, profityear);
+        printf("By %d: %.2f decreased to %.2f USD \n", year, priceInvested, profityear);
         printf("Percetage decrease: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
     }
     puts(" ");
@@ -589,6 +547,78 @@ void predictionsLoader(){
     system("clear");
     puts("According to the predictions, your ROI will be as follows:");
 }
+
+
+double *getPredictionPrices(char *symbol, int year, int *num_values){       //num values will store the number of elements in the returned array
+    
+    sqlite3 *db;
+    int rc = sqlite3_open("cryptos.db", &db);
+    char *sql = "SELECT prediction FROM cryptos WHERE id = ? AND year = ?;";
+
+    sqlite3_stmt *stmt;
+
+    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+
+    if (rc != SQLITE_OK ) {
+    fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+
+    return NULL;
+    } 
+
+    // Bind the values to the placeholders
+    sqlite3_bind_text(stmt, 1, symbol, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, year);
+
+    // Count the number of rows in the result set
+    int count = 0;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+    count++;
+    }
+
+    *num_values = count;
+
+    if (count == 0) {
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+
+    return NULL;
+    }
+
+    // Allocate memory for the float array
+    double *predictions = malloc(count * sizeof(double));
+
+    if (predictions == NULL) {
+    fprintf(stderr, "Error allocating memory for float array\n");
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+
+    return NULL;
+    }
+
+    // Reset the prepared statement and fetch the rows again
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+    sqlite3_bind_text(stmt, 1, symbol, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, year);
+
+    int i = 0;
+    
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+    // Get the float value
+    double float_value = sqlite3_column_double(stmt, 0);
+
+    predictions[i++] = float_value;
+    }
+
+    sqlite3_finalize(stmt);
+    //sqlite3_close(db);
+
+    return predictions;
+
+}
+
 
 
 //gcc -o crypto3 app.c -lcurl -lsqlite3 -lssl -lcrypto
