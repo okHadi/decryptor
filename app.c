@@ -387,6 +387,7 @@ int main(){
                 int adminPanelOpt;
                 scanf("%d", &adminPanelOpt);
                 if (adminPanelOpt == 1){            //add crypto predictions
+                    addprediction:
                     char *sql = "INSERT INTO cryptos (id, year, prediction) VALUES (?, ?, ?);";
                     // Declare a pointer to the prepared statement
                     sqlite3_stmt *stmt;
@@ -424,10 +425,26 @@ int main(){
                     return 1;
                     }
                     sleep(1);
+                    
                     puts("Added succesfully. What would you like to do?");
+                    wrongoptpred:
                     puts("1- Add another prediction");
-                    puts("2- Exit to main menu");
-
+                    puts("2- See the predictions")
+                    puts("3- Exit to main menu");
+                    int afterpred;
+                    scanf("%d", &afterpred);
+                    if (afterpred == 1){
+                        goto addprediction;
+                    }
+                    else if(afterpred == 2){
+                        puts("HI");
+                    }
+                    else if(afterpred ==3){
+                        goto menu;
+                    }
+                    else{
+                        puts("\nPlease enter a correct option.");
+                    }
                     sqlite3_finalize(stmt);
                     sqlite3_close(db);
 
