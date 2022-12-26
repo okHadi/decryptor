@@ -9,6 +9,7 @@
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
 
+void predictionResultMenu();
 void adminPanelMenu();
 void adminPanel();
 void adminPanelOptions();
@@ -65,7 +66,7 @@ int main(){
 
         return 1;
     }
-    char *sql = "CREATE TABLE cryptos(id text NOT NULL, year integer NOT NULL, prediction float NOT NULL);";
+    char *sql = "CREATE TABLE IF NOT EXIST cryptos(id text NOT NULL, year integer NOT NULL, prediction float NOT NULL);";
   
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
 
@@ -73,11 +74,13 @@ int main(){
     menu:
     puts("");
     mainMenu();
+    setting:
+    puts("");
     int opt;
     char symbol[10];
     char* result;
     float priceInvested;
-   scanf("%d", &opt);
+    scanf("%d", &opt);
 
     if (opt == 1){              //user chooses to get the prediction calculator
     cryptoPredictor();
@@ -89,7 +92,7 @@ int main(){
     for (int i=0; i<strlen(symbol); i++){       //upper case the symbol
         symbol[i] = toupper(symbol[i]);
     }
-
+    
     int symbolCheck = 0;
     FILE* fpointer;
     int buffLength = 255;
@@ -203,6 +206,21 @@ int main(){
     predictionResult(priceInvested, profit23, 2023);
     predictionResult(priceInvested, profit24, 2024);
     predictionResult(priceInvested, profit25, 2025);
+    predictionResultMenu();
+    predopt:
+    puts("");
+    int predopt;
+    scanf("%d", &predopt);
+    if (predopt == 1){
+        goto menu;
+    }
+    else if(predopt == 2){
+        return 0;
+    }
+    else{
+        puts("PLease enter a correct option.");
+        goto predopt;
+    }
 
     }
 
@@ -241,6 +259,7 @@ int main(){
     }
     else if(opt ==3){
         adminPanelMenu();
+
         char password[100];
         char pass_str[] = "ecef7b1e64c70decb9786df778d470f7288c02eeb6b95c97dade5b46d768ab50";    //temppassword
         unsigned char pass_hash[SHA256_DIGEST_LENGTH];
@@ -266,6 +285,8 @@ int main(){
                 puts("The password is correct, logging you in...");
                 adminPanel();
                 adminPanelOptions();
+                adminpanel:
+                puts("");
                 int adminPanelOpt;
                 scanf("%d", &adminPanelOpt);
                 if (adminPanelOpt == 1){            //add crypto predictions
@@ -310,14 +331,14 @@ int main(){
                     sleep(1);
                     
                     puts("Added succesfully. What would you like to do?");
-                    addCryptosToTxt(symbol);
+                    addCryptosToTxt(idadd);
                     wrongoptpred:
                     puts("1- Add another prediction");
                     puts("2- See the predictions");
                     puts("3- Exit to main menu");
                     int afterpred;
                     scanf("%d", &afterpred);
-
+    
                     if (afterpred == 1){
                         goto addprediction;
                     }
@@ -387,6 +408,13 @@ int main(){
                     }
 
                 }
+                else if(adminPanelOpt == 2){
+                    goto menu;
+                }
+                else{
+                    puts("Please enter a correct option.");
+                    goto adminpanel;
+                }
 
             } 
             else {
@@ -405,8 +433,7 @@ int main(){
     }
     else{                                           //incase user inputs wrong option on the menu
         puts("Please enter a correct option.\n");
-        mainMenuOptions();
-        goto menu;
+        goto setting;
     }
 
 
@@ -422,7 +449,6 @@ void addCryptosToTxt(char *symbol){
     if (fp == NULL) {
         fprintf(stderr, "Error opening file\n");
     }
-  
     // Write the string to the file
     fprintf(fp, symbol);
   
@@ -469,8 +495,7 @@ void adminPanelOptions(){
     sleep(1);
     puts("Select one of the following options:");
     puts("1- Insert crypto data:");
-    puts("2- View crypto data:");
-    puts("3- Exit to main menu");
+    puts("2- Exit to main menu");
 }
 
 void mainMenu(){
@@ -619,6 +644,13 @@ double *getPredictionPrices(char *symbol, int year, int *num_values){       //nu
 
 }
 
+void predictionResultMenu(){
+    sleep(1);
+    puts("\nWhat would you like to do next?");
+    puts("1- Go to main menu");
+    puts("2- Exit the program");
+}
 
 
-//gcc -o crypto3 app.c -lcurl -lsqlite3 -lssl -lcrypto
+
+//gcc -o crypto app.c -lcurl -lsqlite3 -lssl -lcrypto
