@@ -6,10 +6,14 @@
 #include <unistd.h>
 #include <sqlite3.h>
 #include <openssl/sha.h>
+#include <termios.h>
+
+#define MAX_LEN 128
 #define MAX_LINE_LENGTH 1000
 #define SIZE 300
 
 void predictionResultMenu();
+void image();
 void adminPanelMenu();
 void adminPanel();
 void adminPanelOptions();
@@ -69,48 +73,55 @@ int main(){
     char *sql = "CREATE TABLE IF NOT EXIST cryptos(id text NOT NULL, year integer NOT NULL, prediction float NOT NULL);";
   
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
-
+    char finalPrice[20]; 
     /****************************INPUT FROM USER**********************************/
     menu:
     puts("");
-    mainMenu();
+    int errormenu = 0;
+    //mainMenu();
+    image();
     setting:
     puts("");
-    int opt;
+    if (errormenu == 1){
+        puts("Please enter a correct option.");
+    }
+    errormenu = 0;
+    char opt;
     char symbol[10];
     char* result;
     float priceInvested;
-    scanf("%d", &opt);
 
-    if (opt == 1){              //user chooses to get the prediction calculator
-    cryptoPredictor();
-    symbol:
-    printf("Enter the symbol of the coin: ");
+    scanf(" %c", &opt);
+
+    if (opt == '1'){              //user chooses to get the prediction calculator
+        cryptoPredictor();
+        symbol:
+        printf("Enter the id of the coin: ");
 
 
-    scanf("%s", symbol);     //gets the symbol from the user
-    for (int i=0; i<strlen(symbol); i++){       //upper case the symbol
-        symbol[i] = toupper(symbol[i]);
-    }
-    
-    int symbolCheck = 0;
-    FILE* fpointer;
-    int buffLength = 255;
-    char buff[buffLength]; 
-    fpointer = fopen("predictions.txt", "r");           //opens the predictions data
-    
-    while(fgets(buff, buffLength, fpointer)) {          //to see if the crypto exists 
-        if (strstr(buff, symbol)){
-            symbolCheck = 1;
+        scanf("%s", symbol);     //gets the symbol from the user
+        for (int i=0; i<strlen(symbol); i++){       //upper case the symbol
+            symbol[i] = toupper(symbol[i]);
         }
+    
+        int symbolCheck = 0;
+        FILE* fpointer;
+        int buffLength = 255;
+        char buff[buffLength]; 
+        fpointer = fopen("predictions.txt", "r");           //opens the predictions data
+        
+        while(fgets(buff, buffLength, fpointer)) {          //to see if the crypto exists 
+           if (strstr(buff, symbol)){
+              symbolCheck = 1;
+          }
     }
 
-    fclose(fpointer);
+        fclose(fpointer);
 
-    if (symbolCheck == 0)
+        if (symbolCheck == 0)
     {                  //if it does not exit, have the user enter another one/enter it again
-        wrongSymbolError();
-        goto symbol;
+           wrongSymbolError();
+           goto symbol;
     }
 
     puts(" ");
@@ -156,7 +167,7 @@ int main(){
     /***************************************PRICE EXTRACTION*******************************************************/
         char *priceStr = NULL;
         priceStr = strstr(chnk.memory, "price");            //cuts the string, pointer starts from the "price" part
-        char finalPrice[20];                    //string where the price will be stored without any other part of the res data
+                           //string where the price will be stored without any other part of the res data
         for (int z=7,j=0; z<16; z++, j++)
         {
             if(isdigit(priceStr[z]) || ispunct(priceStr[z]))        //we only get the number and the decimal
@@ -197,7 +208,10 @@ int main(){
     avg23 = avg23/size23;
     avg24 = avg24/size24;
     avg25 = avg25/size25;
+
+    printf("\n");
     predictionsLoader();
+    printf("The current price of %s is: %s", symbol, finalPrice);
     float profit23 = (priceInvested/finPrice)*avg23;
     float profit24 = (priceInvested/finPrice)*avg24;
     float profit25 = (priceInvested/finPrice)*avg25;
@@ -226,7 +240,7 @@ int main(){
 
 
 
-    else if(opt == 2){              //user chooses to read the aboutus section on menu
+    else if(opt == '2'){              //user chooses to read the aboutus section on menu
         system("clear");
         int opt2;
         FILE* filePointer;
@@ -257,18 +271,22 @@ int main(){
         }
 
     }
-    else if(opt ==3){
+    else if(opt == '3'){
         adminPanelMenu();
-
+        
         char password[100];
         char pass_str[] = "ecef7b1e64c70decb9786df778d470f7288c02eeb6b95c97dade5b46d768ab50";    //temppassword
         unsigned char pass_hash[SHA256_DIGEST_LENGTH];
         for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
             sscanf(pass_str + (i * 2), "%2hhx", &pass_hash[i]);
         }
+        
+
         password:
         puts("");
+        
         scanf("%s", password);
+
         if (strcmp(password, "-1") == 0){
             goto menu;
             //break;
@@ -281,7 +299,7 @@ int main(){
             SHA256_Final(entered_hash, &sha256);
 
             if (memcmp(pass_hash, entered_hash, SHA256_DIGEST_LENGTH) == 0) {        //compares the entered password with the original password
-                sleep(0.5);
+                sleep(1);
                 puts("The password is correct, logging you in...");
                 adminPanel();
                 adminPanelOptions();
@@ -345,6 +363,7 @@ int main(){
 
 
                     else if(afterpred == 2){
+                        totalpreds:
                         char *sql = "SELECT * FROM cryptos;";
 
                         sqlite3_stmt *stmt;
@@ -398,7 +417,7 @@ int main(){
                     
 
 
-                    else if(afterpred ==3){
+                    else if(afterpred ==4){
                         goto menu;
                     }
 
@@ -408,8 +427,11 @@ int main(){
                     }
 
                 }
-                else if(adminPanelOpt == 2){
+                else if(adminPanelOpt == 3){
                     goto menu;
+                }
+                else if(adminPanelOpt ==2){
+                    goto totalpreds;
                 }
                 else{
                     puts("Please enter a correct option.");
@@ -426,14 +448,16 @@ int main(){
         }
 
     }
-    else if (opt == 4){
+    else if (opt == '4'){
         
         sqlite3_close(db);
         return 0;                                    //user chooses to exit the program from the menu
     }
     else{                                           //incase user inputs wrong option on the menu
-        puts("Please enter a correct option.\n");
+        //puts("Please enter a correct option.\n");
+        errormenu = 1;
         goto setting;
+   
     }
 
 
@@ -461,10 +485,12 @@ void predictionResult(float priceInvested, float profityear, int year){
     if (profityear>priceInvested){
         printf("By %d: %.2f increased to %.2f USD \n", year, priceInvested, profityear);
         printf("Percetage increase: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
+        printf("\n");
     }
     else{
         printf("By %d: %.2f decreased to %.2f USD \n", year, priceInvested, profityear);
         printf("Percetage decrease: %.2f\n", ((profityear-priceInvested)/priceInvested)*100);
+        printf("\n");
     }
     puts(" ");
     sleep(2);
@@ -488,14 +514,15 @@ void adminPanel(){
     sleep(1);
     puts("Welcome, admin");
     sleep(1);
-    puts("Here you can add your crypto predictions.");
+    puts("Here you can add your crypto predictions, or view existing predictions.");
 }
 
 void adminPanelOptions(){
     sleep(1);
     puts("Select one of the following options:");
-    puts("1- Insert crypto data:");
-    puts("2- Exit to main menu");
+    puts("1- Insert predictions");
+    puts("2- View existing predictions");
+    puts("3- Exit to main menu");
 }
 
 void mainMenu(){
@@ -514,6 +541,31 @@ void mainMenu(){
     sleep(1.5);
     mainMenuOptions();
 }
+
+void image(){
+    system("clear");
+    sleep(1.5);
+    char *filename = "menu.txt";
+    FILE *fptr = NULL;
+ 
+    if((fptr = fopen(filename,"r")) == NULL)
+    {
+        fprintf(stderr,"error opening %s\n",filename);
+        return 1;
+    }
+ 
+    char read_string[MAX_LEN];
+
+    while(fgets(read_string,sizeof(read_string),fptr) != NULL)
+    printf("%s",read_string);
+ 
+    fclose(fptr);
+
+    sleep(1.5);
+    mainMenuOptions();
+ 
+}
+
 
 void mainMenuOptions(){
     puts("Select an option to work with: ");
@@ -538,12 +590,30 @@ void aboutusMenu(){
 }
 
 void cryptoPredictor(){
-    system("clear");
+
+    sleep(1);
+        system("clear");
     sleep(1.5);
-    puts("Welcome to the crypto predictor!");
+    char *filename = "cryptopredictor.txt";
+    FILE *fptr = NULL;
+ 
+    if((fptr = fopen(filename,"r")) == NULL)
+    {
+        fprintf(stderr,"error opening %s\n",filename);
+    }
+ 
+    char read_string[MAX_LEN];
+
+    while(fgets(read_string,sizeof(read_string),fptr) != NULL)
+    printf("%s",read_string);
+ 
+    fclose(fptr);
+
+    sleep(1.5);
     sleep(1.5);
     puts(" ");
-    puts("To use, first insert the symbol of the coin");
+    puts("How to use:");
+    puts("First insert the symbol of the coin");
     puts("that you want to get prediction about.");
     puts(" ");
     sleep(1.5);
@@ -551,6 +621,36 @@ void cryptoPredictor(){
     puts(" ");
     sleep(1.5);
     puts("We will show you the ROI according to our predictors.");
+
+    puts("Available predictions:");
+        sqlite3 *db;
+    int rc;
+
+    // Open the database
+    rc = sqlite3_open("cryptos.db", &db);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Error opening database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+    }
+
+    // Execute the SELECT statement
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, "SELECT DISTINCT id FROM cryptos", -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Error preparing statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+
+    }
+
+    // Print the resulting rows
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        printf("id: %s\n", sqlite3_column_text(stmt, 0));
+    }
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error stepping through results: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+
+    }
     puts(" ");
     puts(" ");
 }
@@ -571,6 +671,7 @@ void predictionsLoader(){
     sleep(2);
     system("clear");
     puts("According to the predictions, your ROI will be as follows:");
+    printf("\n");
 }
 
 
