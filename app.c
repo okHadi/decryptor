@@ -223,16 +223,16 @@ int main(){
     predictionResultMenu();
     predopt:
     puts("");
-    int predopt;
-    scanf("%d", &predopt);
-    if (predopt == 1){
+    char predopt;
+    scanf(" %c", &predopt);
+    if (predopt == '1'){
         goto menu;
     }
-    else if(predopt == 2){
+    else if(predopt == '2'){
         return 0;
     }
     else{
-        puts("PLease enter a correct option.");
+        puts("Please enter a correct option.");
         goto predopt;
     }
 
@@ -242,7 +242,7 @@ int main(){
 
     else if(opt == '2'){              //user chooses to read the aboutus section on menu
         system("clear");
-        int opt2;
+        char opt2;
         FILE* filePointer;
         int bufferLength = 255;
         char buffer[bufferLength];
@@ -250,7 +250,7 @@ int main(){
         filePointer = fopen("aboutus.txt", "r");            //prints the about us file
 
         while(fgets(buffer, bufferLength, filePointer)) {
-        sleep(1);
+        usleep(500000);
         printf("%s\n", buffer);
         }
 
@@ -258,11 +258,11 @@ int main(){
 
         aboutusMenu();
         correctOpt:
-        scanf("%d", &opt2);
-        if (opt2==1){           //goes from about us section to the menu
+        scanf(" %c", &opt2);
+        if (opt2=='1'){           //goes from about us section to the menu
             goto menu;
         }
-        else if(opt2 == 2){         //exits the program from the about us sectoin
+        else if(opt2 == '2'){         //exits the program from the about us sectoin
             return 0;
         }
         else{
@@ -354,15 +354,15 @@ int main(){
                     puts("1- Add another prediction");
                     puts("2- See the predictions");
                     puts("3- Exit to main menu");
-                    int afterpred;
-                    scanf("%d", &afterpred);
+                    char afterpred;
+                    scanf(" %c", &afterpred);
     
-                    if (afterpred == 1){
+                    if (afterpred == '1'){
                         goto addprediction;
                     }
 
 
-                    else if(afterpred == 2){
+                    else if(afterpred == '2'){
                         totalpreds:
                         char *sql = "SELECT * FROM cryptos;";
 
@@ -417,7 +417,7 @@ int main(){
                     
 
 
-                    else if(afterpred ==4){
+                    else if(afterpred =='3'){
                         goto menu;
                     }
 
