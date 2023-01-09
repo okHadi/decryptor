@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <sqlite3.h>
 #include <openssl/sha.h>
-#include <termios.h>
 
 #define MAX_LEN 128
 #define MAX_LINE_LENGTH 1000
@@ -147,7 +146,7 @@ int main(){
     if(curl)
     {
         struct curl_slist *chunk = NULL;
-        chunk = curl_slist_append(chunk, "X-CMC_PRO_API_KEY: d49283ec-042d-49c9-8a38-945fb4d99f98");              //append the key to the header
+        chunk = curl_slist_append(chunk, "X-CMC_PRO_API_KEY: ");     //add key here         //append the key to the header
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
         
         curl_easy_setopt(curl, CURLOPT_URL, url);
