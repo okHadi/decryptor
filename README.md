@@ -4,4 +4,4 @@ Libraries used: Libcurl, ssl, and sqlite3.
 ````
 gcc -o crypto app.c -lcurl -lsqlite3 -lssl -lcrypto
 ````
-Made for linux.
+Developed on Linux.
