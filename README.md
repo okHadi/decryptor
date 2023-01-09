@@ -1,4 +1,4 @@
-# crypto-predictions-c
+# decryptor
 A project made in C, used to store multiple crypto predictions for the user and calculate the profit on invested amount.
 Libraries used: Libcurl, ssl, and sqlite3.
 ````
